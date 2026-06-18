@@ -14,7 +14,7 @@ export default function Sidebar({ currentRole }: SidebarProps) {
   // Navigation schema based on Section 5 route protection rules
   const allNavItems = [
     {
-      href: '/dashboard',
+      href: '/',
       label: 'Dashboard',
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
