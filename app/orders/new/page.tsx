@@ -18,6 +18,7 @@ type OrderForm = {
 
 type SubmittedOrder = OrderForm & {
   orderId: string;
+  createdAt: string;
 };
 
 const initialForm: OrderForm = {
@@ -94,9 +95,22 @@ export default function NewOrderPage() {
 
     if (!validateForm()) return;
 
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const now = new Date();
+    const d = now.getDate();
+    const m = months[now.getMonth()];
+    const y = now.getFullYear();
+    let h = now.getHours();
+    const min = now.getMinutes().toString().padStart(2, '0');
+    const ampm = h >= 12 ? 'PM' : 'AM';
+    h = h % 12;
+    h = h ? h : 12;
+    const createdAt = `${d} ${m} ${y}, ${h}:${min} ${ampm}`;
+
     setSubmittedOrder({
       ...form,
       orderId: `PO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      createdAt,
     });
   };
 
@@ -128,7 +142,11 @@ export default function NewOrderPage() {
                 <h2 className="mt-1 text-xl font-bold text-slate-950">
                   {submittedOrder.orderId}
                 </h2>
-                <p className="mt-1 text-sm text-slate-500">
+                <div className="mt-4">
+                  <p className="text-sm text-slate-500">Created On</p>
+                  <p className="text-sm text-slate-900">{submittedOrder.createdAt}</p>
+                </div>
+                <p className="mt-4 text-sm text-slate-500">
                   Production order has been initialized with mock frontend data.
                 </p>
               </div>
