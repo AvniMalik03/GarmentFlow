@@ -323,6 +323,29 @@ export default function Home() {
           {/* ═══════════════════════════════════════════════════════════════
               SECTION 3: Production Pipeline Overview
               ═══════════════════════════════════════════════════════════════ */}
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Production Insights</h2>
+              <p className="mt-1 text-sm text-slate-500">
+                Quick operational metrics for factory performance.
+              </p>
+            </div>
+
+            <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p className="text-sm font-semibold text-slate-900">Production Efficiency</p>
+                <p className="mt-2 text-3xl font-extrabold text-slate-900">92%</p>
+                <p className="mt-1 text-sm text-slate-500">Orders progressing on schedule</p>
+              </div>
+
+              <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
+                <p className="text-sm font-semibold text-slate-900">Orders On Track</p>
+                <p className="mt-2 text-3xl font-extrabold text-slate-900">20</p>
+                <p className="mt-1 text-sm text-slate-500">Active orders meeting deadlines</p>
+              </div>
+            </div>
+          </section>
+
           <div className="bg-white rounded-2xl border border-slate-200/80 shadow-md p-6 md:p-8">
             <div className="flex items-center justify-between mb-6">
               <div>
