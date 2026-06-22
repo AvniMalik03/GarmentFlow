@@ -79,14 +79,24 @@ export default function StageUpdatePage() {
 
       const parsed: unknown = JSON.parse(saved);
       if (Array.isArray(parsed)) {
-        setOrders(
-          parsed.filter(
+        const validOrders = parsed
+          .filter(
             (value): value is StoredOrder =>
               typeof value === 'object' &&
               value !== null &&
               typeof (value as Record<string, unknown>).id === 'string'
           )
-        );
+          .map((order) =>
+            order.current_stage === 'dispatch' && order.status !== 'completed'
+              ? { ...order, status: 'completed' }
+              : order
+          );
+
+        setOrders(validOrders);
+
+        if (validOrders.some((order, index) => order !== parsed[index])) {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(validOrders));
+        }
       }
     } catch {
       setStorageError('Orders could not be read from local storage.');
@@ -116,7 +126,11 @@ export default function StageUpdatePage() {
 
     const nextOrders = orders.map((order) =>
       order.id === selectedOrder.id
-        ? { ...order, current_stage: nextStage.key }
+        ? {
+            ...order,
+            current_stage: nextStage.key,
+            ...(nextStage.key === 'dispatch' ? { status: 'completed' } : {}),
+          }
         : order
     );
 
@@ -235,8 +249,8 @@ export default function StageUpdatePage() {
               <div className="overflow-x-auto pb-2">
                 <div className="flex min-w-[940px] items-stretch">
                   {STAGES.map((stage, index) => {
-                    const completed = index < currentStageIndex;
-                    const active = index === currentStageIndex;
+                    const completed = index < currentStageIndex || (isComplete && index === currentStageIndex);
+                    const active = !isComplete && index === currentStageIndex;
                     return (
                       <React.Fragment key={stage.key}>
                         <div className={`flex min-h-28 w-32 shrink-0 flex-col justify-between rounded-xl border p-3 transition ${completed ? 'border-emerald-500/35 bg-emerald-500/10' : active ? 'border-indigo-400 bg-indigo-500/15 shadow-lg shadow-indigo-950/40 ring-1 ring-indigo-500/25' : 'border-slate-800 bg-slate-900/60'}`}>
@@ -265,8 +279,13 @@ export default function StageUpdatePage() {
                 {isComplete ? (
                   <div className="mb-6">
                     <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/15 text-xl text-emerald-300">✓</div>
-                    <p className="text-xs font-bold uppercase tracking-[0.18em] text-emerald-400">Production Complete</p>
-                    <h2 className="mt-1 text-xl font-extrabold text-white">Order Successfully Dispatched</h2>
+                    <span className="inline-flex rounded-full border border-emerald-500/30 bg-emerald-500/15 px-3 py-1 text-xs font-bold uppercase tracking-[0.14em] text-emerald-300">
+                      Production Completed
+                    </span>
+                    <div className="mt-4 space-y-2">
+                      <h2 className="text-xl font-extrabold text-white">✓ Order Successfully Dispatched</h2>
+                      <p className="font-semibold text-emerald-300">✓ Production Workflow Finished</p>
+                    </div>
                   </div>
                 ) : (
                   <h2 className="mb-6 text-lg font-bold text-white">Stage Action</h2>
