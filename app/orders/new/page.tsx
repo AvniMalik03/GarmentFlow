@@ -21,6 +21,19 @@ type SubmittedOrder = OrderForm & {
   createdAt: string;
 };
 
+type StoredOrder = {
+  id: string;
+  client_name: string;
+  product_name: string;
+  quantity: number;
+  deadline: string;
+  priority: Lowercase<Priority>;
+  status: 'active';
+  current_stage: 'cloth_received';
+  notes: string;
+  created_at: string;
+};
+
 const initialForm: OrderForm = {
   clientName: '',
   productName: '',
@@ -107,9 +120,39 @@ export default function NewOrderPage() {
     h = h ? h : 12;
     const createdAt = `${d} ${m} ${y}, ${h}:${min} ${ampm}`;
 
+    const orderId = `PO-${now.getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const newOrder: StoredOrder = {
+      id: orderId,
+      client_name: form.clientName.trim(),
+      product_name: form.productName.trim(),
+      quantity: Number(form.quantity),
+      deadline: form.deadline,
+      priority: form.priority.toLowerCase() as Lowercase<Priority>,
+      status: 'active',
+      current_stage: 'cloth_received',
+      notes: form.notes.trim(),
+      created_at: now.toISOString(),
+    };
+
+    let existingOrders: unknown = [];
+    const storedOrders = localStorage.getItem('garment_orders');
+
+    if (storedOrders) {
+      try {
+        existingOrders = JSON.parse(storedOrders) as unknown;
+      } catch {
+        existingOrders = [];
+      }
+    }
+
+    const updatedOrders = Array.isArray(existingOrders)
+      ? [...existingOrders, newOrder]
+      : [newOrder];
+    localStorage.setItem('garment_orders', JSON.stringify(updatedOrders));
+
     setSubmittedOrder({
       ...form,
-      orderId: `PO-${new Date().getFullYear()}-${Math.floor(1000 + Math.random() * 9000)}`,
+      orderId,
       createdAt,
     });
   };

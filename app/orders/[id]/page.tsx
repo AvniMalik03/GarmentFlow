@@ -88,6 +88,43 @@ const MOCK_ORDERS = [
   },
 ];
 
+type OrderDetails = (typeof MOCK_ORDERS)[number];
+
+type StoredOrder = {
+  id: string;
+  client_name: string;
+  product_name: string;
+  quantity: number;
+  deadline: string;
+  priority: Priority;
+  status: OrderStatus;
+  current_stage: Stage;
+  notes: string;
+  created_at: string;
+};
+
+function isStoredOrder(value: unknown): value is StoredOrder {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const order = value as Record<string, unknown>;
+  const priorities: Priority[] = ['low', 'medium', 'high', 'urgent'];
+  const statuses: OrderStatus[] = ['active', 'delayed', 'completed', 'on_hold'];
+  const stages: Stage[] = PIPELINE_STAGES.map((stage) => stage.key);
+
+  return (
+    typeof order.id === 'string' &&
+    typeof order.client_name === 'string' &&
+    typeof order.product_name === 'string' &&
+    typeof order.quantity === 'number' &&
+    typeof order.deadline === 'string' &&
+    priorities.includes(order.priority as Priority) &&
+    statuses.includes(order.status as OrderStatus) &&
+    stages.includes(order.current_stage as Stage) &&
+    typeof order.notes === 'string' &&
+    typeof order.created_at === 'string'
+  );
+}
+
 // Helper to format Date string beautifully
 function formatDate(dateStr: string) {
   return new Date(dateStr).toLocaleDateString('en-US', {
@@ -117,14 +154,45 @@ export default function OrderDetailsPage() {
   const params = useParams();
   const id = typeof params?.id === 'string' ? params.id : 'reliance-trends';
 
-  // Find order in mock database, fallback to a default dynamic object if it is a random ID
-  const matchedOrder = MOCK_ORDERS.find((o) => o.id.toLowerCase() === id.toLowerCase());
-  
   // React State for interactive pipeline tracking simulation
+  const [savedOrders, setSavedOrders] = useState<OrderDetails[]>([]);
+  const [ordersLoaded, setOrdersLoaded] = useState(false);
   const [currentStage, setCurrentStage] = useState<Stage>('stitching');
-  const [order, setOrder] = useState<typeof MOCK_ORDERS[0] | null>(null);
+  const [order, setOrder] = useState<OrderDetails | null>(null);
 
   useEffect(() => {
+    const storedOrders = localStorage.getItem('garment_orders');
+
+    if (storedOrders) {
+      try {
+        const parsedOrders: unknown = JSON.parse(storedOrders);
+        if (Array.isArray(parsedOrders)) {
+          const validOrders = parsedOrders.filter(isStoredOrder).map((storedOrder) => ({
+            ...storedOrder,
+            manager: 'Unassigned Production Supervisor',
+            order_type: 'Production Order',
+          }));
+          setSavedOrders(validOrders);
+        }
+      } catch {
+        setSavedOrders([]);
+      }
+    }
+
+    setOrdersLoaded(true);
+  }, []);
+
+  const allOrders = [
+    ...savedOrders,
+    ...MOCK_ORDERS,
+  ];
+
+  // Find order in all available data, falling back only when the ID is unknown
+  const matchedOrder = allOrders.find((o) => o.id.toLowerCase() === id.toLowerCase());
+
+  useEffect(() => {
+    if (!ordersLoaded) return;
+
     if (matchedOrder) {
       setOrder(matchedOrder);
       setCurrentStage(matchedOrder.current_stage);
@@ -152,7 +220,7 @@ export default function OrderDetailsPage() {
       setOrder(newOrder);
       setCurrentStage(newOrder.current_stage);
     }
-  }, [id, matchedOrder]);
+  }, [id, matchedOrder, ordersLoaded]);
 
   if (!order) {
     return (

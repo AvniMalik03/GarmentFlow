@@ -1,9 +1,22 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import DashboardLayout from '@/components/layout/DashboardLayout';
 import { Stage, Priority, OrderStatus } from '@/types';
+
+type SavedOrder = {
+  id: string;
+  client_name: string;
+  product_name: string;
+  quantity: number;
+  deadline: string;
+  priority: Priority;
+  status: OrderStatus;
+  current_stage: Stage;
+  notes: string;
+  created_at: string;
+};
 
 // Define sequence and display label of stages
 const STAGES_CONFIG: Record<Stage, { label: string; index: number }> = {
@@ -104,13 +117,55 @@ function getDaysRemaining(deadlineStr: string) {
   }
 }
 
+function isSavedOrder(value: unknown): value is SavedOrder {
+  if (typeof value !== 'object' || value === null) return false;
+
+  const order = value as Record<string, unknown>;
+  const priorities: Priority[] = ['low', 'medium', 'high', 'urgent'];
+  const statuses: OrderStatus[] = ['active', 'delayed', 'completed', 'on_hold'];
+  const stages: Stage[] = Object.keys(STAGES_CONFIG) as Stage[];
+
+  return (
+    typeof order.id === 'string' &&
+    typeof order.client_name === 'string' &&
+    typeof order.product_name === 'string' &&
+    typeof order.quantity === 'number' &&
+    typeof order.deadline === 'string' &&
+    priorities.includes(order.priority as Priority) &&
+    statuses.includes(order.status as OrderStatus) &&
+    stages.includes(order.current_stage as Stage) &&
+    typeof order.notes === 'string' &&
+    typeof order.created_at === 'string'
+  );
+}
+
 export default function OrdersPage() {
+  const [savedOrders, setSavedOrders] = useState<SavedOrder[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sortBy, setSortBy] = useState<string>('deadline');
 
+  useEffect(() => {
+    const storedOrders = localStorage.getItem('garment_orders');
+    if (!storedOrders) return;
+
+    try {
+      const parsedOrders: unknown = JSON.parse(storedOrders);
+      if (Array.isArray(parsedOrders)) {
+        setSavedOrders(parsedOrders.filter(isSavedOrder));
+      }
+    } catch {
+      setSavedOrders([]);
+    }
+  }, []);
+
+  const allOrders = [
+    ...savedOrders,
+    ...MOCK_ORDERS,
+  ];
+
   // Filter & Sort Logic
-  const filteredOrders = MOCK_ORDERS.filter((order) => {
+  const filteredOrders = allOrders.filter((order) => {
     const matchesSearch = 
       order.client_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.product_name.toLowerCase().includes(searchQuery.toLowerCase()) ||

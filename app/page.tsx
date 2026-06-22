@@ -1,11 +1,59 @@
+"use client";
+
+import { useEffect, useState } from "react";
 import DashboardLayout from "@/components/layout/DashboardLayout";
 
+type DashboardOrder = {
+  status: "active" | "completed" | "delayed" | "on_hold";
+};
+
+const MOCK_ORDERS: DashboardOrder[] = [
+  { status: "active" },
+  { status: "active" },
+  { status: "on_hold" },
+  { status: "completed" },
+];
+
+function isDashboardOrder(value: unknown): value is DashboardOrder {
+  if (typeof value !== "object" || value === null) return false;
+
+  const status = (value as Record<string, unknown>).status;
+  return (
+    status === "active" ||
+    status === "completed" ||
+    status === "delayed" ||
+    status === "on_hold"
+  );
+}
+
 export default function Home() {
+  const [savedOrders, setSavedOrders] = useState<DashboardOrder[]>([]);
+
+  useEffect(() => {
+    const storedOrders = localStorage.getItem("garment_orders");
+    if (!storedOrders) return;
+
+    try {
+      const parsedOrders: unknown = JSON.parse(storedOrders);
+      if (Array.isArray(parsedOrders)) {
+        setSavedOrders(parsedOrders.filter(isDashboardOrder));
+      }
+    } catch {
+      setSavedOrders([]);
+    }
+  }, []);
+
+  const allOrders = [...savedOrders, ...MOCK_ORDERS];
+  const totalOrders = allOrders.length;
+  const activeOrders = allOrders.filter((order) => order.status === "active").length;
+  const completedOrders = allOrders.filter((order) => order.status === "completed").length;
+  const delayedOrders = allOrders.filter((order) => order.status === "delayed").length;
+
   // ── KPI Data ──────────────────────────────────────────────────────────────
   const kpis = [
     {
       title: "Total Orders",
-      value: 24,
+      value: totalOrders,
       description: "All system orders",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -19,7 +67,7 @@ export default function Home() {
     },
     {
       title: "Active Orders",
-      value: 12,
+      value: activeOrders,
       description: "In production pipeline",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -34,7 +82,7 @@ export default function Home() {
     },
     {
       title: "Completed Orders",
-      value: 8,
+      value: completedOrders,
       description: "Dispatched or ready",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -48,7 +96,7 @@ export default function Home() {
     },
     {
       title: "Delayed Orders",
-      value: 4,
+      value: delayedOrders,
       description: "Requires attention",
       icon: (
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
