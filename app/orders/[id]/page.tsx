@@ -455,6 +455,9 @@ export default function OrderDetailsPage() {
           </div>
         </div>
 
+        {/* Read-only vertical production timeline */}
+        <ProductionTimeline stages={PIPELINE_STAGES} currentStage={currentStage} />
+
         {/* Stats Columns Section */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           
@@ -850,5 +853,106 @@ export default function OrderDetailsPage() {
 
       </div>
     </DashboardLayout>
+  );
+}
+
+function ProductionTimeline({
+  stages,
+  currentStage,
+}: {
+  stages: typeof PIPELINE_STAGES;
+  currentStage: Stage;
+}) {
+  const currentIndex = stages.findIndex((stage) => stage.key === currentStage);
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-950/60 p-5 shadow-md backdrop-blur-sm sm:p-6 md:p-8">
+      <div className="mb-7">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-400">
+          Manufacturing Progress
+        </p>
+        <h2 className="mt-1 text-lg font-bold text-slate-100">Production Timeline</h2>
+        <p className="mt-1 text-xs text-slate-500">
+          Stage-by-stage status for this production order.
+        </p>
+      </div>
+
+      <ol className="mx-auto max-w-3xl" aria-label="Production Timeline">
+        {stages.map((stage, index) => {
+          const isCompleted = index < currentIndex;
+          const isCurrent = index === currentIndex;
+          const isLast = index === stages.length - 1;
+
+          return (
+            <li
+              key={stage.key}
+              className={`group relative flex gap-4 ${isLast ? '' : 'pb-5 sm:pb-6'}`}
+            >
+              {!isLast && (
+                <span
+                  aria-hidden="true"
+                  className={`absolute left-[19px] top-10 h-[calc(100%-2.5rem)] w-0.5 transition-colors duration-500 ${
+                    isCompleted ? 'bg-emerald-500' : 'bg-slate-800'
+                  }`}
+                />
+              )}
+
+              <div className="relative z-10 shrink-0">
+                <div
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border-2 transition-all duration-300 group-hover:scale-105 ${
+                    isCompleted
+                      ? 'border-emerald-500 bg-emerald-500/15 text-emerald-400 group-hover:bg-emerald-500/20'
+                      : isCurrent
+                        ? 'border-indigo-400 bg-indigo-600 text-white shadow-lg shadow-indigo-500/30 ring-4 ring-indigo-500/10'
+                        : 'border-slate-700 bg-slate-900 text-slate-600 group-hover:border-slate-600 group-hover:text-slate-500'
+                  }`}
+                >
+                  {isCompleted ? (
+                    <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                    </svg>
+                  ) : isCurrent ? (
+                    <span className="relative flex h-3 w-3" aria-hidden="true">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-white opacity-40" />
+                      <span className="relative inline-flex h-3 w-3 rounded-full bg-white" />
+                    </span>
+                  ) : (
+                    <span className="h-2.5 w-2.5 rounded-full border-2 border-current" aria-hidden="true" />
+                  )}
+                </div>
+              </div>
+
+              <div
+                className={`min-w-0 flex-1 rounded-xl border px-4 py-3 transition-all duration-300 sm:flex sm:items-center sm:justify-between sm:gap-4 ${
+                  isCompleted
+                    ? 'border-emerald-500/15 bg-emerald-500/[0.04] group-hover:border-emerald-500/30'
+                    : isCurrent
+                      ? 'border-indigo-500/30 bg-indigo-500/10 shadow-sm shadow-indigo-950/40 group-hover:border-indigo-400/50'
+                      : 'border-slate-800/80 bg-slate-900/35 group-hover:border-slate-700 group-hover:bg-slate-900/55'
+                }`}
+              >
+                <div className="min-w-0">
+                  <h3 className={`text-sm font-bold ${isCompleted ? 'text-emerald-300' : isCurrent ? 'text-indigo-300' : 'text-slate-400'}`}>
+                    {stage.label}
+                  </h3>
+                  <p className="mt-0.5 truncate text-xs text-slate-600 sm:max-w-md">{stage.desc}</p>
+                </div>
+                <span
+                  className={`mt-2 inline-flex shrink-0 rounded-full border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider sm:mt-0 ${
+                    isCompleted
+                      ? 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400'
+                      : isCurrent
+                        ? 'border-indigo-500/30 bg-indigo-500/15 text-indigo-300'
+                        : 'border-slate-800 bg-slate-900 text-slate-600'
+                  }`}
+                >
+                  {isCompleted ? 'Completed' : isCurrent ? 'Current Stage' : 'Pending'}
+                </span>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </section>
   );
 }
