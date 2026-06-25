@@ -134,20 +134,123 @@ function formatDate(dateStr: string) {
   });
 }
 
-// Helper to calculate days remaining
-function getDaysRemaining(deadlineStr: string): { days: number; text: string; isOverdue: boolean } {
-  const today = new Date('2026-06-17'); // current local time simulation anchor
-  const deadline = new Date(deadlineStr);
-  const diffTime = deadline.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+// Helper to format Date as "D MMMM YYYY", e.g., "28 June 2026"
+function formatFullDate(dateStr: string) {
+  const date = new Date(dateStr);
+  if (isNaN(date.getTime())) return dateStr;
   
-  if (diffDays < 0) {
-    return { days: diffDays, text: `${Math.abs(diffDays)} days overdue`, isOverdue: true };
-  } else if (diffDays === 0) {
-    return { days: diffDays, text: 'Due today', isOverdue: false };
+  const day = date.getDate();
+  const month = date.toLocaleDateString('en-US', { month: 'long' });
+  const year = date.getFullYear();
+  return `${day} ${month} ${year}`;
+}
+
+// Helper to calculate days remaining and styles
+function getDeadlineInfo(deadlineStr: string) {
+  const today = new Date();
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  let deadlineMidnight: Date;
+  const parts = deadlineStr.split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    deadlineMidnight = new Date(year, month, day);
   } else {
-    return { days: diffDays, text: `${diffDays} days left`, isOverdue: false };
+    const deadline = new Date(deadlineStr);
+    deadlineMidnight = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
   }
+
+  if (isNaN(deadlineMidnight.getTime())) {
+    return {
+      daysRemaining: 0,
+      daysText: 'Invalid Date',
+      status: 'On Schedule' as const,
+      isOverdue: false,
+      textStyle: 'text-slate-400',
+      bgStyle: 'bg-slate-500/10',
+      borderStyle: 'border-slate-500/20',
+      dotStyle: 'bg-slate-500',
+      iconColor: 'text-slate-400',
+    };
+  }
+
+  const diffTime = deadlineMidnight.getTime() - todayMidnight.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  let daysText = '';
+  let status: 'On Schedule' | 'Approaching Deadline' | 'Urgent' | 'Overdue' = 'On Schedule';
+  let isOverdue = false;
+
+  let textStyle = '';
+  let bgStyle = '';
+  let borderStyle = '';
+  let dotStyle = '';
+  let iconColor = '';
+
+  if (diffDays < 0) {
+    isOverdue = true;
+    const absDays = Math.abs(diffDays);
+    daysText = `${absDays} ${absDays === 1 ? 'Day' : 'Days'} Overdue`;
+    status = 'Overdue';
+    
+    // Dark Red
+    textStyle = 'text-red-400';
+    bgStyle = 'bg-red-950/40';
+    borderStyle = 'border-red-900/50';
+    dotStyle = 'bg-red-500';
+    iconColor = 'text-red-400';
+  } else if (diffDays === 0) {
+    daysText = 'Due Today';
+    status = 'Urgent';
+    
+    // Red (Rose)
+    textStyle = 'text-rose-400';
+    bgStyle = 'bg-rose-500/10';
+    borderStyle = 'border-rose-500/20';
+    dotStyle = 'bg-rose-500';
+    iconColor = 'text-rose-400';
+  } else {
+    daysText = `${diffDays} ${diffDays === 1 ? 'Day' : 'Days'} Left`;
+    if (diffDays > 7) {
+      status = 'On Schedule';
+      // Green (Emerald)
+      textStyle = 'text-emerald-400';
+      bgStyle = 'bg-emerald-500/10';
+      borderStyle = 'border-emerald-500/20';
+      dotStyle = 'bg-emerald-500';
+      iconColor = 'text-emerald-400';
+    } else if (diffDays >= 3 && diffDays <= 7) {
+      status = 'Approaching Deadline';
+      // Amber
+      textStyle = 'text-amber-400';
+      bgStyle = 'bg-amber-500/10';
+      borderStyle = 'border-amber-500/20';
+      dotStyle = 'bg-amber-500';
+      iconColor = 'text-amber-400';
+    } else {
+      status = 'Urgent';
+      // Red (Rose)
+      textStyle = 'text-rose-400';
+      bgStyle = 'bg-rose-500/10';
+      borderStyle = 'border-rose-500/20';
+      dotStyle = 'bg-rose-500';
+      iconColor = 'text-rose-400';
+    }
+  }
+
+  return {
+    daysRemaining: diffDays,
+    daysText,
+    status,
+    isOverdue,
+    textStyle,
+    bgStyle,
+    borderStyle,
+    dotStyle,
+    iconColor,
+  };
 }
 
 export default function OrderDetailsPage() {
@@ -260,7 +363,7 @@ export default function OrderDetailsPage() {
   };
 
   const currentStatusStyle = statusColors[order.status] || statusColors.active;
-  const daysInfo = getDaysRemaining(order.deadline);
+  const daysInfo = getDeadlineInfo(order.deadline);
 
   return (
     <DashboardLayout>
@@ -481,24 +584,46 @@ export default function OrderDetailsPage() {
             </div>
           </div>
 
-          {/* Stat Item: Deadline */}
-          <div className="bg-slate-950/45 border border-slate-800/80 rounded-xl p-5 hover:border-slate-700/60 transition-colors duration-200">
+          {/* Stat Item: Production Deadline */}
+          <div className="bg-slate-950/45 border border-slate-800/80 rounded-xl p-5 hover:border-slate-700/60 transition-colors duration-200 flex flex-col justify-between">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Target Deadline</span>
-              <div className={`p-2 rounded-lg bg-slate-900 border border-slate-800 ${daysInfo.isOverdue ? 'text-rose-400' : 'text-emerald-400'}`}>
+              <span className="text-xs text-slate-500 font-bold uppercase tracking-wider">Production Deadline</span>
+              <div className={`p-2 rounded-lg bg-slate-900 border border-slate-800 ${daysInfo.iconColor}`}>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
               </div>
             </div>
-            <div className="mt-2.5">
-              <h3 className="text-2xl font-extrabold text-white font-mono">
-                {formatDate(order.deadline)}
-              </h3>
-              <p className={`text-[10.5px] font-semibold mt-1 flex items-center gap-1 ${daysInfo.isOverdue ? 'text-rose-500' : 'text-slate-400'}`}>
-                {!daysInfo.isOverdue && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />}
-                {daysInfo.text}
-              </p>
+            
+            <div className="mt-4 space-y-3">
+              <div>
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider block">Deadline Date</span>
+                <span className="text-base font-extrabold text-white tracking-tight">
+                  {formatFullDate(order.deadline)}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider block mb-1">Days Remaining</span>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded text-[11px] font-bold border uppercase tracking-wider ${daysInfo.bgStyle} ${daysInfo.textStyle} ${daysInfo.borderStyle}`}>
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    {daysInfo.isOverdue ? (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    ) : (
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    )}
+                  </svg>
+                  {daysInfo.daysText}
+                </span>
+              </div>
+
+              <div>
+                <span className="text-[10px] text-slate-500 font-semibold uppercase tracking-wider block mb-1">Status</span>
+                <span className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold border uppercase tracking-wider ${daysInfo.bgStyle} ${daysInfo.textStyle} ${daysInfo.borderStyle}`}>
+                  <span className={`h-1.5 w-1.5 rounded-full ${daysInfo.dotStyle}`} />
+                  {daysInfo.status}
+                </span>
+              </div>
             </div>
           </div>
 

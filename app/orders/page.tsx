@@ -92,29 +92,113 @@ const MOCK_ORDERS = [
   },
 ];
 
-// Helper to format Date string
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
 
-// Helper to calculate days remaining
-function getDaysRemaining(deadlineStr: string) {
-  const today = new Date('2026-06-17'); // Simulated current anchor date
-  const deadline = new Date(deadlineStr);
-  const diffTime = deadline.getTime() - today.getTime();
-  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  
-  if (diffDays < 0) {
-    return { text: `${Math.abs(diffDays)}d overdue`, isOverdue: true };
-  } else if (diffDays === 0) {
-    return { text: 'Due today', isOverdue: false };
+// Helper to calculate days remaining and styles
+function getDeadlineInfo(deadlineStr: string) {
+  const today = new Date();
+  const todayMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+
+  let deadlineMidnight: Date;
+  const parts = deadlineStr.split('-');
+  if (parts.length === 3) {
+    const year = parseInt(parts[0], 10);
+    const month = parseInt(parts[1], 10) - 1;
+    const day = parseInt(parts[2], 10);
+    deadlineMidnight = new Date(year, month, day);
   } else {
-    return { text: `${diffDays}d left`, isOverdue: false };
+    const deadline = new Date(deadlineStr);
+    deadlineMidnight = new Date(deadline.getFullYear(), deadline.getMonth(), deadline.getDate());
   }
+
+  if (isNaN(deadlineMidnight.getTime())) {
+    return {
+      daysRemaining: 0,
+      daysText: 'Invalid Date',
+      status: 'On Schedule' as const,
+      isOverdue: false,
+      textStyle: 'text-slate-400',
+      bgStyle: 'bg-slate-500/10',
+      borderStyle: 'border-slate-500/20',
+      dotStyle: 'bg-slate-500',
+      iconColor: 'text-slate-400',
+    };
+  }
+
+  const diffTime = deadlineMidnight.getTime() - todayMidnight.getTime();
+  const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+
+  let daysText = '';
+  let status: 'On Schedule' | 'Approaching Deadline' | 'Urgent' | 'Overdue' = 'On Schedule';
+  let isOverdue = false;
+
+  let textStyle = '';
+  let bgStyle = '';
+  let borderStyle = '';
+  let dotStyle = '';
+  let iconColor = '';
+
+  if (diffDays < 0) {
+    isOverdue = true;
+    const absDays = Math.abs(diffDays);
+    daysText = `${absDays} ${absDays === 1 ? 'Day' : 'Days'} Overdue`;
+    status = 'Overdue';
+    
+    // Dark Red
+    textStyle = 'text-red-400';
+    bgStyle = 'bg-red-950/40';
+    borderStyle = 'border-red-900/50';
+    dotStyle = 'bg-red-500';
+    iconColor = 'text-red-400';
+  } else if (diffDays === 0) {
+    daysText = 'Due Today';
+    status = 'Urgent';
+    
+    // Red (Rose)
+    textStyle = 'text-rose-400';
+    bgStyle = 'bg-rose-500/10';
+    borderStyle = 'border-rose-500/20';
+    dotStyle = 'bg-rose-500';
+    iconColor = 'text-rose-400';
+  } else {
+    daysText = `${diffDays} ${diffDays === 1 ? 'Day' : 'Days'} Left`;
+    if (diffDays > 7) {
+      status = 'On Schedule';
+      // Green (Emerald)
+      textStyle = 'text-emerald-400';
+      bgStyle = 'bg-emerald-500/10';
+      borderStyle = 'border-emerald-500/20';
+      dotStyle = 'bg-emerald-500';
+      iconColor = 'text-emerald-400';
+    } else if (diffDays >= 3 && diffDays <= 7) {
+      status = 'Approaching Deadline';
+      // Amber
+      textStyle = 'text-amber-400';
+      bgStyle = 'bg-amber-500/10';
+      borderStyle = 'border-amber-500/20';
+      dotStyle = 'bg-amber-500';
+      iconColor = 'text-amber-400';
+    } else {
+      status = 'Urgent';
+      // Red (Rose)
+      textStyle = 'text-rose-400';
+      bgStyle = 'bg-rose-500/10';
+      borderStyle = 'border-rose-500/20';
+      dotStyle = 'bg-rose-500';
+      iconColor = 'text-rose-400';
+    }
+  }
+
+  return {
+    daysRemaining: diffDays,
+    daysText,
+    status,
+    isOverdue,
+    textStyle,
+    bgStyle,
+    borderStyle,
+    dotStyle,
+    iconColor,
+  };
 }
 
 function isSavedOrder(value: unknown): value is SavedOrder {
@@ -293,7 +377,7 @@ export default function OrdersPage() {
           /* Orders Cards Grid */
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredOrders.map((order) => {
-              const daysInfo = getDaysRemaining(order.deadline);
+              const daysInfo = getDeadlineInfo(order.deadline);
               const progressVal = STAGE_PROGRESS[order.current_stage] || 0;
               const stageInfo = STAGES_CONFIG[order.current_stage] || { label: 'Unknown', index: 0 };
               const priorityDetail = priorityStyles[order.priority] || priorityStyles.medium;
@@ -371,14 +455,17 @@ export default function OrdersPage() {
                       </span>
 
                       {/* Deadline info */}
-                      <div className="flex items-center gap-1 text-[11px] text-slate-400 font-medium">
-                        <svg className="w-3.5 h-3.5 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                        </svg>
-                        <span>{formatDate(order.deadline)}</span>
-                        <span className="text-slate-600">•</span>
-                        <span className={daysInfo.isOverdue ? 'text-rose-500 font-semibold' : 'text-slate-500'}>
-                          {daysInfo.text}
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Deadline</span>
+                        <span className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-semibold border ${daysInfo.bgStyle} ${daysInfo.textStyle} ${daysInfo.borderStyle}`}>
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            {daysInfo.isOverdue ? (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            ) : (
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            )}
+                          </svg>
+                          {daysInfo.daysText}
                         </span>
                       </div>
                     </div>
