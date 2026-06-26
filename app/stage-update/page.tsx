@@ -15,6 +15,8 @@ type StageKey =
 type StoredOrder = Record<string, unknown> & {
   id: string;
   current_stage?: unknown;
+  completedQuantity?: number;
+  remainingQuantity?: number;
 };
 
 type Activity = {
@@ -71,6 +73,7 @@ export default function StageUpdatePage() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [storageError, setStorageError] = useState('');
   const [isLoaded, setIsLoaded] = useState(false);
+  const [piecesCompletedToday, setPiecesCompletedToday] = useState('');
 
   useEffect(() => {
     try {
@@ -109,6 +112,79 @@ export default function StageUpdatePage() {
     () => orders.find((order) => order.id === selectedOrderId) ?? null,
     [orders, selectedOrderId]
   );
+
+  const orderQuantity = useMemo(() => {
+    if (!selectedOrder) return 0;
+    return Number(selectedOrder.quantity) || 0;
+  }, [selectedOrder]);
+
+  const completedPieces = useMemo(() => {
+    if (!selectedOrder) return 0;
+    return typeof selectedOrder.completedQuantity === 'number'
+      ? selectedOrder.completedQuantity
+      : 0;
+  }, [selectedOrder]);
+
+  const remainingPieces = useMemo(() => {
+    if (!selectedOrder) return 0;
+    return typeof selectedOrder.remainingQuantity === 'number'
+      ? selectedOrder.remainingQuantity
+      : Math.max(0, orderQuantity - completedPieces);
+  }, [selectedOrder, orderQuantity, completedPieces]);
+
+  const progressPercentage = useMemo(() => {
+    if (orderQuantity <= 0) return 0;
+    const pct = (completedPieces / orderQuantity) * 100;
+    return Math.round(pct * 10) / 10;
+  }, [completedPieces, orderQuantity]);
+
+  const inputValidationMessage = useMemo(() => {
+    if (!piecesCompletedToday) return '';
+    const count = parseInt(piecesCompletedToday, 10);
+    if (Number.isNaN(count)) return 'Please enter a valid number';
+    if (count <= 0) return 'Quantity must be greater than 0';
+    if (count > remainingPieces) {
+      return `Quantity cannot exceed remaining pieces (${remainingPieces})`;
+    }
+    return '';
+  }, [piecesCompletedToday, remainingPieces]);
+
+  const isUpdateDisabled = useMemo(() => {
+    if (completedPieces >= orderQuantity) return true;
+    if (!piecesCompletedToday) return true;
+    const count = parseInt(piecesCompletedToday, 10);
+    return Number.isNaN(count) || count <= 0 || count > remainingPieces;
+  }, [completedPieces, orderQuantity, piecesCompletedToday, remainingPieces]);
+
+  const handleUpdateProduction = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+
+    const count = parseInt(piecesCompletedToday, 10);
+    if (Number.isNaN(count) || count <= 0 || count > remainingPieces) return;
+
+    const newCompleted = Math.min(orderQuantity, completedPieces + count);
+    const newRemaining = Math.max(0, orderQuantity - newCompleted);
+
+    const nextOrders = orders.map((order) =>
+      order.id === selectedOrder.id
+        ? {
+            ...order,
+            completedQuantity: newCompleted,
+            remainingQuantity: newRemaining,
+          }
+        : order
+    );
+
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(nextOrders));
+      setOrders(nextOrders);
+      setStorageError('');
+      setPiecesCompletedToday('');
+    } catch {
+      setStorageError('The production quantity could not be saved. Please check browser storage and try again.');
+    }
+  };
 
   const currentStage = selectedOrder && isStageKey(selectedOrder.current_stage)
     ? selectedOrder.current_stage
@@ -271,6 +347,166 @@ export default function StageUpdatePage() {
                     );
                   })}
                 </div>
+              </div>
+            </section>
+
+            {/* Production Quantity Tracking Section */}
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/55 p-5 md:p-6 space-y-6">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Production Quantity</h2>
+                  <p className="mt-1 text-xs text-slate-500">Track and record manufacturing counts for this order.</p>
+                </div>
+                <span className="rounded-full bg-indigo-500/10 border border-indigo-500/20 px-2.5 py-1 text-xs font-bold text-indigo-400">
+                  Daily Tracking
+                </span>
+              </div>
+
+              {/* Order Summary & Metrics Grid */}
+              <div className="grid gap-6 md:grid-cols-3">
+                {/* Order Summary */}
+                <div className="rounded-xl border border-slate-800 bg-slate-950 p-5 space-y-4 md:col-span-1">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500">Order Summary</h3>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-600">Client Name</p>
+                      <p className="text-sm font-semibold text-slate-200">
+                        {getText(selectedOrder, 'client_name', 'clientName')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-600">Product Name</p>
+                      <p className="text-sm font-semibold text-slate-200">
+                        {getText(selectedOrder, 'product_name', 'productName')}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-600">Order Quantity</p>
+                      <p className="text-sm font-semibold text-slate-200">
+                        {orderQuantity.toLocaleString('en-IN')} Pieces
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Production Progress Metrics */}
+                <div className="md:col-span-2 space-y-4">
+                  <div className="grid grid-cols-3 gap-4">
+                    {/* Order Quantity Card */}
+                    <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 flex flex-col justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Order Quantity</span>
+                      <div className="mt-2">
+                        <span className="text-lg sm:text-2xl font-black text-indigo-400 font-mono">
+                          {orderQuantity.toLocaleString('en-IN')}
+                        </span>
+                        <span className="ml-1 text-[10px] font-semibold text-slate-400">Pieces</span>
+                      </div>
+                    </div>
+
+                    {/* Completed Pieces Card */}
+                    <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 flex flex-col justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Completed</span>
+                      <div className="mt-2">
+                        <span className="text-lg sm:text-2xl font-black text-emerald-400 font-mono">
+                          {completedPieces.toLocaleString('en-IN')}
+                        </span>
+                        <span className="ml-1 text-[10px] font-semibold text-slate-400">Pieces</span>
+                      </div>
+                    </div>
+
+                    {/* Remaining Pieces Card */}
+                    <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 flex flex-col justify-between">
+                      <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Remaining</span>
+                      <div className="mt-2">
+                        <span className="text-lg sm:text-2xl font-black text-amber-400 font-mono">
+                          {remainingPieces.toLocaleString('en-IN')}
+                        </span>
+                        <span className="ml-1 text-[10px] font-semibold text-slate-400">Pieces</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Modern Animated Progress Bar */}
+                  <div className="rounded-xl border border-slate-800 bg-slate-950 p-5 space-y-3">
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Completed Progress</span>
+                      </div>
+                      <span className="font-mono font-bold text-slate-300 text-xs">{progressPercentage}%</span>
+                    </div>
+                    <div className="w-full bg-slate-900 rounded-full h-3 overflow-hidden border border-slate-800">
+                      <div
+                        className="h-full rounded-full bg-gradient-to-r from-emerald-500 via-indigo-500 to-amber-500 transition-all duration-700 ease-out"
+                        style={{ width: `${progressPercentage}%` }}
+                        role="progressbar"
+                        aria-label="Production completion progress"
+                        aria-valuemin={0}
+                        aria-valuemax={100}
+                        aria-valuenow={progressPercentage}
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Today's Production Actions */}
+              <div className="rounded-xl border border-slate-800 bg-slate-950 p-5">
+                {completedPieces === orderQuantity ? (
+                  /* Completion State */
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    <div className="flex items-center gap-3">
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-400 text-lg">
+                        ✓
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-white">Production Completed</h4>
+                        <p className="text-xs text-slate-400">All Pieces Manufactured Successfully</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      disabled
+                      className="w-full sm:w-auto rounded-xl border border-slate-800 bg-slate-900 px-6 py-2.5 text-xs font-bold text-slate-500 cursor-not-allowed"
+                    >
+                      Completed
+                    </button>
+                  </div>
+                ) : (
+                  /* Today's Production Form */
+                  <form onSubmit={handleUpdateProduction} className="flex flex-col sm:flex-row items-end gap-4 justify-between">
+                    <div className="w-full sm:max-w-xs space-y-2">
+                      <label htmlFor="piecesCompletedToday" className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+                        Pieces Completed Today
+                      </label>
+                      <input
+                        id="piecesCompletedToday"
+                        type="text"
+                        pattern="[0-9]*"
+                        inputMode="numeric"
+                        placeholder="e.g. 150"
+                        value={piecesCompletedToday}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          if (val === '' || /^[0-9]+$/.test(val)) {
+                            setPiecesCompletedToday(val);
+                          }
+                        }}
+                        className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-2.5 text-sm font-semibold text-white outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10"
+                      />
+                      {inputValidationMessage && (
+                        <p className="text-xs font-semibold text-rose-400">{inputValidationMessage}</p>
+                      )}
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={isUpdateDisabled}
+                      className="w-full sm:w-auto rounded-xl bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-indigo-950/40 transition hover:bg-indigo-500 focus:outline-none focus:ring-4 focus:ring-indigo-500/20 disabled:cursor-not-allowed disabled:bg-slate-800 disabled:text-slate-500 disabled:shadow-none disabled:border-slate-800"
+                    >
+                      Update Production
+                    </button>
+                  </form>
+                )}
               </div>
             </section>
 
