@@ -827,6 +827,9 @@ export default function OrderDetailsPage() {
           </div>
         </div>
 
+        {/* Production Stage Breakdown Analytics */}
+        <ProductionStageBreakdown totalQuantity={order.quantity} currentStage={currentStage} />
+
         {/* Bottom Details Tabs & Real logs mockup */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
@@ -978,6 +981,176 @@ export default function OrderDetailsPage() {
 
       </div>
     </DashboardLayout>
+  );
+}
+
+// ─── Mock piece-count data per stage ──────────────────────────────────────────
+// Each entry: [completed, total] pieces. Values are illustrative and static.
+const STAGE_PIECE_DATA: Record<Stage, { icon: string; completed: number; total: number }> = {
+  cloth_received: { icon: '📦', completed: 670, total: 670 },
+  cutting:        { icon: '✂️',  completed: 670, total: 670 },
+  stitching:      { icon: '🧵', completed: 570, total: 670 },
+  finishing:      { icon: '🪡', completed: 420, total: 570 },
+  ironing:        { icon: '🔥', completed: 280, total: 420 },
+  packing:        { icon: '📦', completed: 120, total: 280 },
+  dispatch:       { icon: '🚚', completed: 50,  total: 120 },
+};
+
+function ProductionStageBreakdown({
+  totalQuantity,
+  currentStage,
+}: {
+  totalQuantity: number;
+  currentStage: Stage;
+}) {
+  const currentIndex = PIPELINE_STAGES.findIndex((s) => s.key === currentStage);
+
+  // Scale mock piece data proportionally to the real order quantity
+  const scale = totalQuantity / 670;
+
+  return (
+    <section className="rounded-2xl border border-slate-800 bg-slate-950/60 p-6 shadow-md backdrop-blur-sm md:p-8">
+      {/* Section header */}
+      <div className="mb-7 flex flex-col gap-1">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-indigo-400">
+          Piece-level Analytics
+        </p>
+        <div className="flex items-center gap-3">
+          <h2 className="text-lg font-bold text-slate-100">Production Stage Breakdown</h2>
+          <span className="rounded-full border border-slate-700 bg-slate-900 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+            Live Mock
+          </span>
+        </div>
+        <p className="text-xs text-slate-500">
+          Tracks how many garment pieces have passed through each production stage.
+        </p>
+      </div>
+
+      {/* Stage rows */}
+      <div className="space-y-3">
+        {PIPELINE_STAGES.map((stage, idx) => {
+          const isCompleted = idx < currentIndex;
+          const isCurrent   = idx === currentIndex;
+          const isUpcoming  = idx > currentIndex;
+
+          const raw = STAGE_PIECE_DATA[stage.key];
+          const completed = Math.round(raw.completed * scale);
+          const total     = Math.round(raw.total     * scale);
+          const pct       = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+          // Badge
+          let badgeClass = '';
+          let badgeLabel = '';
+          if (isCompleted) {
+            badgeClass = 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400';
+            badgeLabel = 'Completed';
+          } else if (isCurrent) {
+            badgeClass = 'border-indigo-500/30 bg-indigo-500/15 text-indigo-300';
+            badgeLabel = 'Current Stage';
+          } else {
+            badgeClass = 'border-slate-700 bg-slate-900 text-slate-500';
+            badgeLabel = 'Upcoming';
+          }
+
+          // Row highlight
+          const rowClass = isCurrent
+            ? 'border-indigo-500/20 bg-indigo-500/[0.06] hover:border-indigo-400/30'
+            : 'border-slate-800/60 bg-slate-900/30 hover:border-slate-700 hover:bg-slate-900/50';
+
+          // Progress bar colour
+          const barColor = isCompleted
+            ? 'bg-emerald-500'
+            : isCurrent
+            ? 'bg-indigo-500'
+            : 'bg-slate-600';
+
+          return (
+            <div
+              key={stage.key}
+              className={`group rounded-xl border px-4 py-4 transition-all duration-200 ${rowClass}`}
+            >
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+
+                {/* Left: icon + name + pieces */}
+                <div className="flex min-w-0 flex-1 items-center gap-3">
+                  {/* Icon bubble */}
+                  <div
+                    className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 text-lg transition-all duration-300 ${
+                      isCompleted
+                        ? 'border-emerald-500/40 bg-emerald-500/10'
+                        : isCurrent
+                        ? 'border-indigo-500/50 bg-indigo-600/20'
+                        : 'border-slate-700 bg-slate-900'
+                    }`}
+                    aria-hidden="true"
+                  >
+                    {isCompleted ? (
+                      <svg className="h-5 w-5 text-emerald-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                      </svg>
+                    ) : (
+                      <span className="leading-none">{raw.icon}</span>
+                    )}
+                  </div>
+
+                  {/* Name & piece count */}
+                  <div className="min-w-0">
+                    <p
+                      className={`text-sm font-bold ${
+                        isCompleted ? 'text-emerald-300' : isCurrent ? 'text-indigo-300' : 'text-slate-400'
+                      }`}
+                    >
+                      {stage.label}
+                    </p>
+                    <p className="mt-0.5 text-xs text-slate-500">
+                      <span className="font-mono font-semibold text-slate-300">{completed.toLocaleString()}</span>
+                      <span className="mx-1 text-slate-600">/</span>
+                      <span className="font-mono">{total.toLocaleString()}</span>
+                      <span className="ml-1 text-slate-600">Pieces</span>
+                    </p>
+                  </div>
+                </div>
+
+                {/* Right: badge */}
+                <span
+                  className={`shrink-0 self-start rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider sm:self-auto ${
+                    badgeClass
+                  }`}
+                >
+                  {badgeLabel}
+                </span>
+              </div>
+
+              {/* Progress bar row */}
+              <div className="mt-3 flex items-center gap-3">
+                {/* Track */}
+                <div className="relative h-2 flex-1 overflow-hidden rounded-full bg-slate-800">
+                  <div
+                    className={`absolute left-0 top-0 h-full rounded-full transition-all duration-700 ease-out ${
+                      barColor
+                    } ${isCurrent ? 'animate-pulse' : ''}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+                {/* Percentage label */}
+                <span
+                  className={`w-10 shrink-0 text-right text-xs font-bold tabular-nums ${
+                    isCompleted ? 'text-emerald-400' : isCurrent ? 'text-indigo-400' : 'text-slate-500'
+                  }`}
+                >
+                  {pct}%
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Footer note */}
+      <p className="mt-5 text-[11px] text-slate-600">
+        💡 Piece counts reflect cumulative throughput at each stage gate. Figures update as stages advance.
+      </p>
+    </section>
   );
 }
 
