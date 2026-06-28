@@ -181,10 +181,10 @@ export default function StageUpdatePage() {
     const nextOrders = orders.map((order) =>
       order.id === selectedOrder.id
         ? {
-            ...order,
-            completedQuantity: newCompleted,
-            remainingQuantity: newRemaining,
-          }
+          ...order,
+          completedQuantity: newCompleted,
+          remainingQuantity: newRemaining,
+        }
         : order
     );
 
@@ -230,10 +230,10 @@ export default function StageUpdatePage() {
     const nextOrders = orders.map((order) =>
       order.id === selectedOrder.id
         ? {
-            ...order,
-            current_stage: nextStage.key,
-            ...(nextStage.key === 'dispatch' ? { status: 'completed' } : {}),
-          }
+          ...order,
+          current_stage: nextStage.key,
+          ...(nextStage.key === 'dispatch' ? { status: 'completed' } : {}),
+        }
         : order
     );
 
@@ -615,36 +615,6 @@ export default function StageUpdatePage() {
                 )}
               </div>
 
-              {/* Saved Log Display */}
-              {savedLog && (
-                <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-5 space-y-4">
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-violet-400">Saved Log</h3>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-slate-600">Date</p>
-                      <p className="text-sm font-semibold text-slate-200">{savedLog.date}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-slate-600">Last Updated</p>
-                      <p className="text-sm font-semibold text-slate-200">{savedLog.lastUpdated}</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-slate-600">Completed Today</p>
-                      <p className="text-sm font-semibold text-emerald-400 font-mono">{savedLog.completedToday.toLocaleString('en-IN')} Pieces</p>
-                    </div>
-                    <div>
-                      <p className="text-[10px] uppercase font-bold text-slate-600">Remaining Pieces</p>
-                      <p className="text-sm font-semibold text-amber-400 font-mono">{savedLog.remainingPieces.toLocaleString('en-IN')} Pieces</p>
-                    </div>
-                    {savedLog.remarks && (
-                      <div className="sm:col-span-2">
-                        <p className="text-[10px] uppercase font-bold text-slate-600">Supervisor Remarks</p>
-                        <p className="mt-1 text-sm font-medium text-slate-300 whitespace-pre-wrap">{savedLog.remarks}</p>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              )}
             </section>
 
             <div className="grid gap-7 lg:grid-cols-[1fr_1.15fr]">
