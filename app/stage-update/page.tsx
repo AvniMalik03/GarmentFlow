@@ -75,6 +75,18 @@ export default function StageUpdatePage() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [piecesCompletedToday, setPiecesCompletedToday] = useState('');
 
+  // Today's Production Log state
+  const [supervisorRemarks, setSupervisorRemarks] = useState('');
+  const [savedLog, setSavedLog] = useState<{
+    date: string;
+    completedToday: number;
+    remainingPieces: number;
+    lastUpdated: string;
+    remarks: string;
+  } | null>(null);
+  const [logSaveSuccess, setLogSaveSuccess] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<string>('');
+
   useEffect(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
@@ -184,6 +196,21 @@ export default function StageUpdatePage() {
     } catch {
       setStorageError('The production quantity could not be saved. Please check browser storage and try again.');
     }
+  };
+
+  const handleSaveProductionLog = () => {
+    const now = new Date();
+    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const dateStr = now.toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' });
+    setLastUpdated(timeStr);
+    setSavedLog({
+      date: dateStr,
+      completedToday: completedPieces,
+      remainingPieces: remainingPieces,
+      lastUpdated: timeStr,
+      remarks: supervisorRemarks,
+    });
+    setLogSaveSuccess(true);
   };
 
   const currentStage = selectedOrder && isStageKey(selectedOrder.current_stage)
@@ -508,6 +535,116 @@ export default function StageUpdatePage() {
                   </form>
                 )}
               </div>
+            </section>
+
+            {/* Today's Production Log Section */}
+            <section className="rounded-2xl border border-slate-800 bg-slate-950/55 p-5 md:p-6 space-y-5">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-white">Today&apos;s Production Log</h2>
+                  <p className="mt-1 text-xs text-slate-500">Record a summary of today&apos;s production activity.</p>
+                </div>
+                <span className="rounded-full bg-violet-500/10 border border-violet-500/20 px-2.5 py-1 text-xs font-bold text-violet-400">
+                  Supervisor Log
+                </span>
+              </div>
+
+              {/* Log Info Grid */}
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                {/* Date */}
+                <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Date</p>
+                  <p className="text-sm font-semibold text-slate-200">
+                    {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  </p>
+                </div>
+
+                {/* Completed Today */}
+                <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Completed Today</p>
+                  <p className="text-sm font-semibold text-emerald-400 font-mono">
+                    {completedPieces.toLocaleString('en-IN')}{' '}
+                    <span className="text-[10px] font-semibold text-slate-400">Pieces</span>
+                  </p>
+                </div>
+
+                {/* Remaining Pieces */}
+                <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Remaining Pieces</p>
+                  <p className="text-sm font-semibold text-amber-400 font-mono">
+                    {remainingPieces.toLocaleString('en-IN')}{' '}
+                    <span className="text-[10px] font-semibold text-slate-400">Pieces</span>
+                  </p>
+                </div>
+
+                {/* Last Updated */}
+                <div className="rounded-xl border border-slate-800 bg-slate-950 p-4 space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Last Updated</p>
+                  <p className="text-sm font-semibold text-slate-300">
+                    {lastUpdated || '—'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Supervisor Remarks */}
+              <div className="space-y-2">
+                <label htmlFor="supervisorRemarks" className="block text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Supervisor Remarks
+                </label>
+                <textarea
+                  id="supervisorRemarks"
+                  rows={3}
+                  value={supervisorRemarks}
+                  onChange={(e) => setSupervisorRemarks(e.target.value)}
+                  placeholder={'Example:\n"Finished Batch 3. Waiting for finishing department."'}
+                  className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white placeholder-slate-600 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 resize-none"
+                />
+              </div>
+
+              {/* Save Button */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+                <button
+                  type="button"
+                  onClick={handleSaveProductionLog}
+                  className="rounded-xl bg-violet-600 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-violet-950/40 transition hover:bg-violet-500 focus:outline-none focus:ring-4 focus:ring-violet-500/20"
+                >
+                  Save Production Log
+                </button>
+                {logSaveSuccess && (
+                  <p className="text-sm font-semibold text-emerald-400">✓ Production log saved successfully.</p>
+                )}
+              </div>
+
+              {/* Saved Log Display */}
+              {savedLog && (
+                <div className="rounded-xl border border-violet-500/20 bg-violet-500/5 p-5 space-y-4">
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-violet-400">Saved Log</h3>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-600">Date</p>
+                      <p className="text-sm font-semibold text-slate-200">{savedLog.date}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-600">Last Updated</p>
+                      <p className="text-sm font-semibold text-slate-200">{savedLog.lastUpdated}</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-600">Completed Today</p>
+                      <p className="text-sm font-semibold text-emerald-400 font-mono">{savedLog.completedToday.toLocaleString('en-IN')} Pieces</p>
+                    </div>
+                    <div>
+                      <p className="text-[10px] uppercase font-bold text-slate-600">Remaining Pieces</p>
+                      <p className="text-sm font-semibold text-amber-400 font-mono">{savedLog.remainingPieces.toLocaleString('en-IN')} Pieces</p>
+                    </div>
+                    {savedLog.remarks && (
+                      <div className="sm:col-span-2">
+                        <p className="text-[10px] uppercase font-bold text-slate-600">Supervisor Remarks</p>
+                        <p className="mt-1 text-sm font-medium text-slate-300 whitespace-pre-wrap">{savedLog.remarks}</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </section>
 
             <div className="grid gap-7 lg:grid-cols-[1fr_1.15fr]">
