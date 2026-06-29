@@ -599,6 +599,9 @@ export default function StageUpdatePage() {
                   placeholder={'Example:\n"Finished Batch 3. Waiting for finishing department."'}
                   className="w-full rounded-xl border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-medium text-white placeholder-slate-600 outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 resize-none"
                 />
+                <p className="mt-2 text-left text-xs text-slate-500">
+                  <strong>Tip:</strong> Record production delays, machine issues, material shortages, or important supervisor notes to help track daily production activities.
+                </p>
               </div>
 
               {/* Save Button */}
