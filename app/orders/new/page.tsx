@@ -32,6 +32,7 @@ type StoredOrder = {
   current_stage: 'cloth_received';
   notes: string;
   created_at: string;
+  image?: string;
 };
 
 const initialForm: OrderForm = {
@@ -51,6 +52,30 @@ export default function NewOrderPage() {
   const [form, setForm] = useState<OrderForm>(initialForm);
   const [errors, setErrors] = useState<Partial<Record<keyof OrderForm, string>>>({});
   const [submittedOrder, setSubmittedOrder] = useState<SubmittedOrder | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageName, setImageName] = useState<string | null>(null);
+
+  const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const allowedTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (!allowedTypes.includes(file.type)) {
+        alert('Only JPG, PNG and WEBP files are accepted.');
+        return;
+      }
+      setImageName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setImagePreview(null);
+    setImageName(null);
+  };
 
   const summary = useMemo(
     () => ({
@@ -132,6 +157,7 @@ export default function NewOrderPage() {
       current_stage: 'cloth_received',
       notes: form.notes.trim(),
       created_at: now.toISOString(),
+      image: imagePreview || undefined,
     };
 
     let existingOrders: unknown = [];
@@ -161,6 +187,8 @@ export default function NewOrderPage() {
     setForm(initialForm);
     setErrors({});
     setSubmittedOrder(null);
+    setImagePreview(null);
+    setImageName(null);
   };
 
   return (
@@ -237,6 +265,57 @@ export default function NewOrderPage() {
                     placeholder="Cotton work shirts"
                   />
                 </Field>
+
+                <Field label="Reference Product Image" className="md:col-span-2">
+                  {!imagePreview ? (
+                    <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-slate-200 hover:border-indigo-500 bg-slate-50/50 hover:bg-slate-50 rounded-xl cursor-pointer transition-all duration-150 p-4">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg className="w-8 h-8 mb-3 text-slate-400 hover:text-indigo-500 transition-colors" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                        </svg>
+                        <p className="mb-1 text-sm text-slate-700 font-semibold">Click to upload reference image</p>
+                        <p className="text-xs text-slate-400">JPG, PNG or WEBP files</p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/jpeg, image/png, image/webp"
+                        className="hidden"
+                        onChange={handleImageChange}
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex flex-col items-start gap-4 p-4 border border-slate-200 bg-slate-50/30 rounded-xl w-full">
+                      <div className="relative group max-w-xs">
+                        <img
+                          src={imagePreview}
+                          alt="Product Preview"
+                          className="max-h-48 object-contain rounded-lg border border-slate-200 shadow-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="absolute -top-2 -right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1.5 shadow-md focus:outline-none transition"
+                          title="Remove image"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between w-full gap-2">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-slate-500 font-medium truncate max-w-sm" title={imageName || ""}>
+                            {imageName}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                          ✓ Image Selected
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </Field>
+
 
                 <Field label="Quantity" error={errors.quantity}>
                   <input
