@@ -33,6 +33,9 @@ type StoredOrder = {
   notes: string;
   created_at: string;
   image?: string;
+  image_name?: string;
+  tech_pack?: string;
+  tech_pack_name?: string;
 };
 
 const initialForm: OrderForm = {
@@ -52,8 +55,11 @@ export default function NewOrderPage() {
   const [form, setForm] = useState<OrderForm>(initialForm);
   const [errors, setErrors] = useState<Partial<Record<keyof OrderForm, string>>>({});
   const [submittedOrder, setSubmittedOrder] = useState<SubmittedOrder | null>(null);
+  
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [imageName, setImageName] = useState<string | null>(null);
+  const [techPackFile, setTechPackFile] = useState<string | null>(null);
+  const [techPackName, setTechPackName] = useState<string | null>(null);
 
   const handleImageChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -75,6 +81,27 @@ export default function NewOrderPage() {
   const handleRemoveImage = () => {
     setImagePreview(null);
     setImageName(null);
+  };
+
+  const handleTechPackChange = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      if (file.type !== 'application/pdf') {
+        alert('Only PDF files are accepted.');
+        return;
+      }
+      setTechPackName(file.name);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setTechPackFile(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveTechPack = () => {
+    setTechPackFile(null);
+    setTechPackName(null);
   };
 
   const summary = useMemo(
@@ -158,6 +185,9 @@ export default function NewOrderPage() {
       notes: form.notes.trim(),
       created_at: now.toISOString(),
       image: imagePreview || undefined,
+      image_name: imageName || undefined,
+      tech_pack: techPackFile || undefined,
+      tech_pack_name: techPackName || undefined,
     };
 
     let existingOrders: unknown = [];
@@ -189,6 +219,8 @@ export default function NewOrderPage() {
     setSubmittedOrder(null);
     setImagePreview(null);
     setImageName(null);
+    setTechPackFile(null);
+    setTechPackName(null);
   };
 
   return (
@@ -266,56 +298,6 @@ export default function NewOrderPage() {
                   />
                 </Field>
 
-                <Field label="Reference Product Image" className="md:col-span-2">
-                  {!imagePreview ? (
-                    <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-slate-200 hover:border-indigo-500 bg-slate-50/50 hover:bg-slate-50 rounded-xl cursor-pointer transition-all duration-150 p-4">
-                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
-                        <svg className="w-8 h-8 mb-3 text-slate-400 hover:text-indigo-500 transition-colors" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
-                          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
-                        </svg>
-                        <p className="mb-1 text-sm text-slate-700 font-semibold">Click to upload reference image</p>
-                        <p className="text-xs text-slate-400">JPG, PNG or WEBP files</p>
-                      </div>
-                      <input
-                        type="file"
-                        accept="image/jpeg, image/png, image/webp"
-                        className="hidden"
-                        onChange={handleImageChange}
-                      />
-                    </label>
-                  ) : (
-                    <div className="flex flex-col items-start gap-4 p-4 border border-slate-200 bg-slate-50/30 rounded-xl w-full">
-                      <div className="relative group max-w-xs">
-                        <img
-                          src={imagePreview}
-                          alt="Product Preview"
-                          className="max-h-48 object-contain rounded-lg border border-slate-200 shadow-sm"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleRemoveImage}
-                          className="absolute -top-2 -right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1.5 shadow-md focus:outline-none transition"
-                          title="Remove image"
-                        >
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                          </svg>
-                        </button>
-                      </div>
-                      <div className="flex flex-wrap items-center justify-between w-full gap-2">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs text-slate-500 font-medium truncate max-w-sm" title={imageName || ""}>
-                            {imageName}
-                          </p>
-                        </div>
-                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
-                          ✓ Image Selected
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                </Field>
-
 
                 <Field label="Quantity" error={errors.quantity}>
                   <input
@@ -352,6 +334,116 @@ export default function NewOrderPage() {
                       </option>
                     ))}
                   </select>
+                </Field>
+              </div>
+            </section>
+
+            <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="mb-6">
+                <h2 className="text-lg font-bold text-slate-950">Reference Files</h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  Upload visual references and technical specifications for this order.
+                </p>
+              </div>
+
+              <div className="grid gap-5 md:grid-cols-2">
+                <Field label="Reference Sample Image">
+                  {!imagePreview ? (
+                    <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-slate-200 hover:border-indigo-500 bg-slate-50/50 hover:bg-slate-50 rounded-xl cursor-pointer transition-all duration-150 p-4">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg className="w-8 h-8 mb-3 text-slate-400 hover:text-indigo-500 transition-colors" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                          <path stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                        </svg>
+                        <p className="mb-1 text-sm text-slate-700 font-semibold text-center">Click to upload image</p>
+                        <p className="text-xs text-slate-400 text-center">JPG, PNG, WEBP</p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="image/jpeg, image/png, image/webp"
+                        className="hidden"
+                        onChange={handleImageChange}
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex flex-col items-start gap-4 p-4 border border-slate-200 bg-slate-50/30 rounded-xl w-full h-full justify-between">
+                      <div className="relative group max-w-full w-full flex justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={imagePreview}
+                          alt="Product Preview"
+                          className="max-h-32 object-contain rounded-lg border border-slate-200 shadow-sm"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRemoveImage}
+                          className="absolute -top-2 -right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1.5 shadow-md focus:outline-none transition"
+                          title="Remove image"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between w-full gap-2 mt-auto">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-slate-500 font-medium truncate" title={imageName || ""}>
+                            {imageName}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                          ✓ Uploaded
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                </Field>
+
+                <Field label="Tech Pack (PDF)">
+                  {!techPackFile ? (
+                    <label className="flex flex-col items-center justify-center w-full min-h-[140px] border-2 border-dashed border-slate-200 hover:border-indigo-500 bg-slate-50/50 hover:bg-slate-50 rounded-xl cursor-pointer transition-all duration-150 p-4">
+                      <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                        <svg className="w-8 h-8 mb-3 text-slate-400 hover:text-indigo-500 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                        </svg>
+                        <p className="mb-1 text-sm text-slate-700 font-semibold text-center">Click to upload tech pack</p>
+                        <p className="text-xs text-slate-400 text-center">PDF files only</p>
+                      </div>
+                      <input
+                        type="file"
+                        accept="application/pdf"
+                        className="hidden"
+                        onChange={handleTechPackChange}
+                      />
+                    </label>
+                  ) : (
+                    <div className="flex flex-col items-start gap-4 p-4 border border-slate-200 bg-slate-50/30 rounded-xl w-full h-full justify-between">
+                      <div className="relative group w-full flex items-center justify-center p-4 bg-white rounded-lg border border-slate-200 shadow-sm">
+                        <svg className="w-12 h-12 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <button
+                          type="button"
+                          onClick={handleRemoveTechPack}
+                          className="absolute -top-2 -right-2 bg-rose-600 hover:bg-rose-700 text-white rounded-full p-1.5 shadow-md focus:outline-none transition"
+                          title="Remove PDF"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between w-full gap-2 mt-auto">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-slate-500 font-medium truncate" title={techPackName || ""}>
+                            {techPackName}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 shrink-0">
+                          ✓ Uploaded
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </Field>
               </div>
             </section>
