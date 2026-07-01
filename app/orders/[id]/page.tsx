@@ -441,63 +441,151 @@ export default function OrderDetailsPage() {
         {/* Order Core Details Cards Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           
-          {/* Main Info Card */}
-          <div className="lg:col-span-2 bg-slate-950/40 border border-slate-800 rounded-2xl p-6 md:p-8 backdrop-blur-sm space-y-6 shadow-md relative overflow-hidden group">
-            {/* Background design accents */}
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -mr-12 -mt-12 group-hover:bg-indigo-500/10 transition-colors duration-500 pointer-events-none" />
-            
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400">Order Client</span>
-                <h2 className="text-2xl font-bold text-white mt-0.5">{order.client_name}</h2>
-                <div className="flex items-center gap-2.5 mt-2">
-                  <span className="text-xs text-slate-400 font-medium">{order.order_type}</span>
-                  <span className="w-1.5 h-1.5 rounded-full bg-slate-700" />
-                  <span className="text-xs font-mono text-slate-500">#{order.id.slice(0, 8)}</span>
+          <div className="lg:col-span-2 space-y-8">
+            {/* Main Info Card */}
+            <div className="bg-slate-950/40 border border-slate-800 rounded-2xl p-6 md:p-8 backdrop-blur-sm space-y-6 shadow-md relative overflow-hidden group">
+              {/* Background design accents */}
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 rounded-full blur-3xl -mr-12 -mt-12 group-hover:bg-indigo-500/10 transition-colors duration-500 pointer-events-none" />
+              
+              <div className="flex flex-wrap items-start justify-between gap-4">
+                <div>
+                  <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-400">Order Client</span>
+                  <h2 className="text-2xl font-bold text-white mt-0.5">{order.client_name}</h2>
+                  <div className="flex items-center gap-2.5 mt-2">
+                    <span className="text-xs text-slate-400 font-medium">{order.order_type}</span>
+                    <span className="w-1.5 h-1.5 rounded-full bg-slate-700" />
+                    <span className="text-xs font-mono text-slate-500">#{order.id.slice(0, 8)}</span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
+                    <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse"></span>
+                    {order.status.replace('_', ' ')}
+                  </span>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-bold border uppercase tracking-wider ${currentStatusStyle.bg} ${currentStatusStyle.text} ${currentStatusStyle.border}`}>
-                  <span className="h-1.5 w-1.5 rounded-full bg-current animate-pulse"></span>
-                  {order.status.replace('_', ' ')}
+
+              <hr className="border-slate-800/80" />
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                <div className="space-y-1">
+                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Product Description</span>
+                  <span className="text-slate-200 font-semibold text-lg flex items-center gap-2">
+                    <svg className="w-5 h-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                    {order.product_name}
+                  </span>
+                </div>
+                
+                <div className="space-y-1">
+                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Production Supervisor</span>
+                  <span className="text-slate-200 font-semibold text-base flex items-center gap-2">
+                    <div className="w-6 h-6 rounded-full bg-slate-800 text-indigo-400 border border-slate-700 flex items-center justify-center text-[10px] font-bold">
+                      {order.manager.split(' ').map(n => n[0]).join('').slice(0, 2)}
+                    </div>
+                    {order.manager}
+                  </span>
+                </div>
+              </div>
+
+              <div className="space-y-2 bg-slate-900/30 border border-slate-800/60 rounded-xl p-4">
+                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider flex items-center gap-1.5">
+                  <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                  Production Directive Notes
                 </span>
+                <p className="text-xs text-slate-400 leading-relaxed italic">
+                  &ldquo;{order.notes}&rdquo;
+                </p>
               </div>
             </div>
 
-            <hr className="border-slate-800/80" />
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Product Description</span>
-                <span className="text-slate-200 font-semibold text-lg flex items-center gap-2">
-                  <svg className="w-5 h-5 text-indigo-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+            {/* Reference Files Card */}
+            <div className="bg-slate-950/40 border border-slate-800 rounded-2xl p-6 md:p-8 backdrop-blur-sm shadow-md relative overflow-hidden group">
+              <div className="mb-6">
+                <h3 className="text-lg font-bold text-white flex items-center gap-2">
+                  <svg className="w-5 h-5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                   </svg>
-                  {order.product_name}
-                </span>
+                  Reference Files
+                </h3>
               </div>
               
-              <div className="space-y-1">
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Production Supervisor</span>
-                <span className="text-slate-200 font-semibold text-base flex items-center gap-2">
-                  <div className="w-6 h-6 rounded-full bg-slate-800 text-indigo-400 border border-slate-700 flex items-center justify-center text-[10px] font-bold">
-                    {order.manager.split(' ').map(n => n[0]).join('').slice(0, 2)}
-                  </div>
-                  {order.manager}
-                </span>
-              </div>
-            </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3 flex flex-col">
+                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Approved Sample</span>
+                  {order.image ? (
+                    <div className="flex flex-col items-center justify-between gap-4 p-4 border border-slate-800 bg-slate-900/30 rounded-xl flex-1">
+                      <div className="relative group w-full flex justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={order.image}
+                          alt="Approved Sample"
+                          className="max-h-48 object-contain rounded-lg border border-slate-700/50 shadow-sm"
+                        />
+                      </div>
+                      <div className="flex flex-wrap items-center justify-between w-full gap-2 mt-auto pt-2 border-t border-slate-800/50">
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs text-slate-400 font-medium truncate" title={order.image_name || "sample.jpg"}>
+                            {order.image_name || "sample.jpg"}
+                          </p>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shrink-0 uppercase">
+                          ✓ Uploaded
+                        </span>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 border border-slate-800 border-dashed bg-slate-900/20 rounded-xl flex-1">
+                      <svg className="w-8 h-8 text-slate-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-sm text-slate-500 font-medium italic">No sample image uploaded.</span>
+                    </div>
+                  )}
+                </div>
 
-            <div className="space-y-2 bg-slate-900/30 border border-slate-800/60 rounded-xl p-4">
-              <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider flex items-center gap-1.5">
-                <svg className="w-4 h-4 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-                Production Directive Notes
-              </span>
-              <p className="text-xs text-slate-400 leading-relaxed italic">
-                &ldquo;{order.notes}&rdquo;
-              </p>
+                <div className="space-y-3 flex flex-col">
+                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Tech Pack</span>
+                  {order.tech_pack ? (
+                    <div className="flex flex-col justify-between p-4 border border-slate-800 bg-slate-900/30 rounded-xl flex-1">
+                      <div className="flex flex-col items-center justify-center flex-1 w-full gap-3">
+                        <div className="p-3 bg-rose-500/10 rounded-2xl border border-rose-500/20 shadow-inner">
+                          <svg className="w-10 h-10 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                        </div>
+                        <span className="text-sm font-medium text-slate-300 truncate max-w-full px-2 text-center" title={order.tech_pack_name || 'Tech Pack PDF'}>
+                          {order.tech_pack_name || 'Tech Pack PDF'}
+                        </span>
+                      </div>
+                      <div className="flex justify-center w-full mt-4 pt-4 border-t border-slate-800/50">
+                        <a 
+                          href={order.tech_pack} 
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 text-xs font-bold text-white uppercase tracking-wider hover:bg-indigo-500 px-6 py-2.5 bg-indigo-600 rounded-lg transition-all shadow-md hover:shadow-indigo-500/25"
+                        >
+                          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                          </svg>
+                          View
+                        </a>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center p-6 border border-slate-800 border-dashed bg-slate-900/20 rounded-xl flex-1">
+                      <svg className="w-8 h-8 text-slate-600 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                      </svg>
+                      <span className="text-sm text-slate-500 font-medium italic">No Tech Pack uploaded.</span>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -797,104 +885,40 @@ export default function OrderDetailsPage() {
             </div>
           </div>
 
-          {/* Right Column Wrapper */}
-          <div className="space-y-8">
-            {/* Quick Specifications list */}
-            <div className="bg-slate-950/40 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-6">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <svg className="w-4.5 h-4.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
-                </svg>
-                Order Technical Info
-              </h3>
+          {/* Quick Specifications list */}
+          <div className="bg-slate-950/40 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-6">
+            <h3 className="text-base font-bold text-white flex items-center gap-2">
+              <svg className="w-4.5 h-4.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+              </svg>
+              Order Technical Info
+            </h3>
 
-              <div className="space-y-4 text-xs">
-                <div className="flex items-center justify-between border-b border-slate-900 pb-2">
-                  <span className="text-slate-500">Fabric Thread Count</span>
-                  <span className="text-slate-300 font-mono">60s Giza Cotton</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-slate-900 pb-2">
-                  <span className="text-slate-500">QC Pass Threshold</span>
-                  <span className="text-slate-300 font-mono">98.5% Acceptance</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-slate-900 pb-2">
-                  <span className="text-slate-500">Package Type</span>
-                  <span className="text-slate-300">Flat Hanger Pack</span>
-                </div>
-                <div className="flex items-center justify-between border-b border-slate-900 pb-2">
-                  <span className="text-slate-500">Ironing Spec</span>
-                  <span className="text-slate-300">Heavy Steam (Cotton Setting)</span>
-                </div>
-                <div className="flex items-center justify-between pb-1">
-                  <span className="text-slate-500">Logistics Vendor</span>
-                  <span className="text-indigo-400 font-semibold">GarmentFlow Express</span>
-                </div>
+            <div className="space-y-4 text-xs">
+              <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                <span className="text-slate-500">Fabric Thread Count</span>
+                <span className="text-slate-300 font-mono">60s Giza Cotton</span>
               </div>
-              
-              <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-4 text-[11px] text-slate-500 leading-relaxed">
-                💡 Technical parameters are initialized automatically from client spec sheet during pre-production phase.
+              <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                <span className="text-slate-500">QC Pass Threshold</span>
+                <span className="text-slate-300 font-mono">98.5% Acceptance</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                <span className="text-slate-500">Package Type</span>
+                <span className="text-slate-300">Flat Hanger Pack</span>
+              </div>
+              <div className="flex items-center justify-between border-b border-slate-900 pb-2">
+                <span className="text-slate-500">Ironing Spec</span>
+                <span className="text-slate-300">Heavy Steam (Cotton Setting)</span>
+              </div>
+              <div className="flex items-center justify-between pb-1">
+                <span className="text-slate-500">Logistics Vendor</span>
+                <span className="text-indigo-400 font-semibold">GarmentFlow Express</span>
               </div>
             </div>
-
-            {/* Reference Files Card */}
-            <div className="bg-slate-950/40 border border-slate-800 rounded-2xl p-6 backdrop-blur-sm space-y-6">
-              <h3 className="text-base font-bold text-white flex items-center gap-2">
-                <svg className="w-4.5 h-4.5 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
-                </svg>
-                Reference Files
-              </h3>
-              
-              <div className="space-y-6">
-                <div className="space-y-3">
-                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Reference Sample</span>
-                  {order.image ? (
-                    <div className="relative group max-w-full w-full flex justify-center p-3 border border-slate-800 rounded-xl bg-slate-900/50">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={order.image} alt="Reference Sample" className="max-h-40 object-contain rounded-lg" />
-                    </div>
-                  ) : (
-                    <div className="p-5 border border-slate-800 border-dashed rounded-xl bg-slate-900/20 flex flex-col items-center justify-center gap-2">
-                      <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-xs text-slate-500 font-medium italic">No file uploaded</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="space-y-3">
-                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block">Tech Pack</span>
-                  {order.tech_pack ? (
-                    <div className="flex items-center justify-between p-4 border border-slate-800 rounded-xl bg-slate-900/50">
-                      <div className="flex items-center gap-3 overflow-hidden">
-                        <div className="p-2 bg-rose-500/10 rounded-lg">
-                          <svg className="w-5 h-5 text-rose-500 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                        </div>
-                        <span className="text-sm font-medium text-slate-300 truncate" title={order.tech_pack_name || 'Tech Pack PDF'}>
-                          {order.tech_pack_name || 'Tech Pack PDF'}
-                        </span>
-                      </div>
-                      <a 
-                        href={order.tech_pack} 
-                        download={order.tech_pack_name || 'TechPack.pdf'} 
-                        className="text-[11px] font-bold text-indigo-400 uppercase tracking-wider hover:text-indigo-300 hover:bg-indigo-500/20 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-md transition-colors"
-                      >
-                        View
-                      </a>
-                    </div>
-                  ) : (
-                    <div className="p-5 border border-slate-800 border-dashed rounded-xl bg-slate-900/20 flex flex-col items-center justify-center gap-2">
-                      <svg className="w-6 h-6 text-slate-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                      </svg>
-                      <span className="text-xs text-slate-500 font-medium italic">No file uploaded</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+            
+            <div className="bg-slate-900/40 border border-slate-800/80 rounded-xl p-4 text-[11px] text-slate-500 leading-relaxed">
+              💡 Technical parameters are initialized automatically from client spec sheet during pre-production phase.
             </div>
           </div>
         </div>
